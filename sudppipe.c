@@ -319,8 +319,10 @@ int main(int argc, char *argv[]) {
 	printf("- ready\n");
 	FD_ZERO(&readset);		// wait first client's packet, this is NEEDED!
 	FD_SET(sdl, &readset);
-	if(select(sdl + 1, &readset, NULL, NULL, NULL)
+	printf("b10921.5\n");
+	if(select(sdl + 1, &readset, NULL, NULL, NULL) // boris here: здесь уходит в ожидание...
 	  < 0) std_err();
+	printf("b10921.6\n");
 
 	buff = malloc(BUFFSZ);
 	if(!buff) std_err();
@@ -366,7 +368,7 @@ int main(int argc, char *argv[]) {
 
 			if(sudp_pck) len = sudp_pck(buff, len);  // packets modification
 
-			printf("b10921.1\n");
+			printf("b10921.1 1\n");
 
 			for(c = clients; c; c = c->next) {
 				if(sd0) sendtof(sd0, buff, len, &peer0, 1);
@@ -382,6 +384,7 @@ int main(int argc, char *argv[]) {
 			}
 
 		} else if(sd0 && FD_ISSET(sd0, &readset)) {    // experimental and useless
+			printf("b10921.1 2\n");
 			RECVFROMF(sd0)
 
 			psrc = &peerl;
@@ -397,6 +400,7 @@ int main(int argc, char *argv[]) {
 				// nothing to do here
 			}
 		} else if(FD_ISSET(sdl, &readset)) {
+			printf("b10921.1 3\n");
 			RECVFROMF(sdl)
 
 			c = check_sd(&peerl, 0);	// check if this is a new or existent client
@@ -430,7 +434,9 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		} else {
+			printf("b10921.1 4\n");
 			for(c = clients; c; c = c->next) {
+				printf("b10921.11\n");
 				if(!FD_ISSET(c->sd, &readset)) continue;
 				RECVFROMF(c->sd)
 
