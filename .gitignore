@@ -23,3 +23,5 @@
 *.hex
 sudppipe
 
+*.swp
+*.swo
