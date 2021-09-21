@@ -1,3 +1,8 @@
+# Simple UDP Pipe (sudppipe)
+> Forked from [udp-replay](https://github.com/Khan/udp-relay).
+
+
+```
 udp-replay
 ==========
 
@@ -11,3 +16,8 @@ cf. http://linux.softpedia.com/get/Internet/Proxy/Simple-UDP-proxy-pipe-11521.sh
 Khan Academy additions:
 
 1) replace_plugin.c, based on example_plugins/rep_sudp.c.
+```
+
+# Licence
+
+GNU General Public License v2.0
