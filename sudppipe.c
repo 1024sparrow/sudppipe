@@ -168,7 +168,8 @@ void std_err(void);
 
 
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	struct clients_struct
 		*c = NULL,
@@ -434,7 +435,8 @@ int main(int argc, char *argv[])
 		for(c = clients; c; c = c->next)
 		{
 			FD_SET(c->sd, &readset);
-			if(c->sd > selsock) selsock = c->sd;
+			if(c->sd > selsock)
+				selsock = c->sd;
 		}
 
 		tout.tv_sec  = timeout; // this is useful if we want to free memory
@@ -649,7 +651,8 @@ int main(int argc, char *argv[])
 
 
 
-int sendtof(int s, char *buf, int len, struct sockaddr_in *to, int do_mysendto)
+int
+sendtof(int s, char *buf, int len, struct sockaddr_in *to, int do_mysendto)
 {
 	int
 		oldlen = 0,
@@ -705,8 +708,9 @@ quit_and_free:
 }
 
 
-
-struct clients_struct *check_sd(struct sockaddr_in *peer, int force_remove)
+// подключаем клиента
+struct clients_struct *
+check_sd(struct sockaddr_in *peer, int force_remove)
 {
 	struct clients_struct
 		*c,
@@ -830,7 +834,8 @@ multisock_doit:
 
 
 
-struct sockaddr_in *create_peer_array(u8 *list, u16 default_port)
+struct sockaddr_in *
+create_peer_array(u8 *list, u16 default_port)
 {
 	struct sockaddr_in *ret;
 	int
@@ -883,7 +888,8 @@ struct sockaddr_in *create_peer_array(u8 *list, u16 default_port)
 
 
 
-void show_peer_array(u8 *str, struct sockaddr_in *peer)
+void
+show_peer_array(u8 *str, struct sockaddr_in *peer)
 {
 	int i;
 
@@ -905,15 +911,17 @@ void show_peer_array(u8 *str, struct sockaddr_in *peer)
 
 
 
-int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port) {
+int
+bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
+{ // boris here
 	struct sockaddr_in peer_tmp;
 	int sd;
 	static const int
-		on = 1,
+		on = 1, // reuse address option
 		tos = 0x10
 	;
-	static const struct
-		linger ling = {1,1}
+	static const struct linger
+		ling = {1,1}
 	;
 
 	if (!peer)
@@ -934,9 +942,11 @@ int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port) {
 		}
 	}
 
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); // оригинал: IPPROTO_UDP ослабляет требования к контрольной сумме.
 	if (sd < 0)
 		std_err();
+	//const int optval = 1; // boris habr
+	//setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 	setsockopt(
 		sd,
 		SOL_SOCKET,
@@ -944,16 +954,28 @@ int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port) {
 		(char *)&on,
 		sizeof(on)
 	);
+	// sockfd = socket(AF_INET, SOCK_DGRAM, 0); // boris habr
+	/* boris habr: Windows
+		struct sockaddr_in addr;
+		bzero(&addr, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		addr.sin_addr.s_addr = htonl(INADDR_ANY); // в Linux - наш целевой IP
+
+		bind(sockfd, (sockaddr *)&addr, sizeof(addr));
+	*/
 	if (
 		bind(
 			sd,
-			(struct sockaddr *)peer,
+			(struct sockaddr *)peer, // в случае с Виндой, INADDR_ANY надо передавать
 			sizeof(struct sockaddr_in)
 		) < 0
 	)
 	{
 		std_err();
 	}
+	printf("--%i--\n", useMulticast);
+	puts("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
 	setsockopt(
 		sd,
@@ -981,7 +1003,8 @@ int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port) {
 
 
 
-void loaddll(u8 *fname, u8 *par)
+void
+loaddll(u8 *fname, u8 *par)
 {
 	if(!fname)
 		return;
@@ -1005,7 +1028,8 @@ void loaddll(u8 *fname, u8 *par)
 
 
 
-in_addr_t resolv(char *host)
+in_addr_t
+resolv(char *host)
 {
 	struct hostent *hp;
 	in_addr_t host_ip;
@@ -1030,13 +1054,15 @@ in_addr_t resolv(char *host)
 
 
 #ifndef WIN32
-void std_err(void)
+void
+std_err(void)
 {
 	perror("\nError");
 	exit(1);
 }
 #else
-void winerr(void)
+void
+winerr(void)
 {
 	char *error;
 
