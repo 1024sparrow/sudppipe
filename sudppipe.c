@@ -226,7 +226,6 @@ int main(int argc, char *argv[])
 		stderr
 	);
 
-	printf("BORIS\n");
 	if(argc < 4)
 	{
 		printf(
