@@ -1,5 +1,9 @@
 sudppipe change log:
 
+# 0.4.2
+
+Piping to multicast groups added (option -M)
+
 # 0.4.1
 
 Last version taken from Khan

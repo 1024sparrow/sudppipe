@@ -151,7 +151,8 @@ int
 	multisock = 0,
 	samesock = 0,
 	quiet = 0,
-	timeout = 60// NAT uses a timeout of 5 minutes (300 seconds)
+	timeout = 60,// NAT uses a timeout of 5 minutes (300 seconds)
+	useMulticast = 0
 ;
 
 
@@ -234,29 +235,30 @@ int main(int argc, char *argv[])
 				"\n"
 				"Options:\n"
 				"-x          show the hex dump of each packet\n"
-				"-a FILE  create a CAP (tcpdump) file in which storing all the packets\n"
-				"-b IP      bind only the input interface identified with IP\n"
-				"-B IP      as above but works only for the outgoing socket, this means you can\n"
-				"          decide to use a secondary interface for connecting to the host (for\n"
-				"          example using a wireless connection instead of the main one)\n"
-				 "-l LIB   load a dll/so file which will be used to process all the incoming\n"
-				"          packets. The library must contain the following __cdecl functions:\n"
-				"            int sudp_init(char *data);            // if you need initialization\n"
-				"            int sudp_pck(char *data, int len);    // each packet goes here\n"
-				"            int sudp_vis(char *data, int len);    // for visualization only\n"
-				"            int myrecvfrom(...cut...);            // proxocket plugin\n"
-				"            int mysendto(...cut...);            // proxocket plugin\n"
-				"-L PAR   parameter for the initialization of the above function,\n"
-				"          if the plugin library supports parameters use -L \"\" for help/list\n"
+				"-a FILE     create a CAP (tcpdump) file in which storing all the packets\n"
+				"-b IP       bind only the input interface identified with IP\n"
+				"-B IP       as above but works only for the outgoing socket, this means you can\n"
+				"              decide to use a secondary interface for connecting to the host (for\n"
+				"              example using a wireless connection instead of the main one)\n"
+				 "-l LIB     load a dll/so file which will be used to process all the incoming\n"
+				"              packets. The library must contain the following __cdecl functions:\n"
+				"                int sudp_init(char *data);            // if you need initialization\n"
+				"                int sudp_pck(char *data, int len);    // each packet goes here\n"
+				"                int sudp_vis(char *data, int len);    // for visualization only\n"
+				"                int myrecvfrom(...cut...);            // proxocket plugin\n"
+				"                int mysendto(...cut...);            // proxocket plugin\n"
+				"-L PAR      parameter for the initialization of the above function,\n"
+				"              if the plugin library supports parameters use -L \"\" for help/list\n"
 				"-e          forward each packet to anyone (clients and server) except the sender,\n"
-				"          it works just like a chat or a broadcaster\n"
-				"-i PORT  injection option, listen on the port PORT and each packet received\n"
-				"          here is sent to the server from all the connected clients\n"
+				"              it works just like a chat or a broadcaster\n"
+				"-i PORT     injection option, listen on the port PORT and each packet received\n"
+				"              here is sent to the server from all the connected clients\n"
 				"-X          in case of multiple hosts assigns a new socket to each client, this\n"
-				"          is useful if the hosts are the same for using multiple source ports\n"
+				"              is useful if the hosts are the same for using multiple source ports\n"
 				"-Y          just the opposite of the above one, ANY client has the same port\n"
-				"-t SECS  seconds of inactivity after which closing the client socket (%d)\n"
+				"-t SECS     seconds of inactivity after which closing the client socket (%d)\n"
 				"-p          increase process priority\n"
+				"-M          interprete each server's IP as IP of multicast group\n"
 				"-q          quiet output\n"
 				"\n"
 				"* <server> can be also a sequence of hostnames and IP addresses separated by\n"
@@ -281,19 +283,20 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		switch(argv[i][1]) {
-			case 'x': hexdump	= 1;					break;
-			case 'a': acpfile	= argv[++i];			break;
-			case 'b': lhost		= resolv(argv[++i]);	break;
-			case 'B': Lhost		= resolv(argv[++i]);	break;
-			case 'l': dllname	= argv[++i];			break;
-			case 'L': dllpar	= argv[++i];			break;
-			case 'e': everyone	= 1;					break;
-			case 'i': inject	= atoi(argv[++i]);		break;
-			case 'p': priority	= 1;					break;
-			case 'q': quiet		= 1;					break;
-			case 'X': multisock = 1;					break;
-			case 'Y': samesock	= 1;					break;
-			case 't': timeout	= atoi(argv[++i]);		break;
+			case 'x': hexdump = 1;break;
+			case 'a': acpfile = argv[++i];break;
+			case 'b': lhost = resolv(argv[++i]);break;
+			case 'B': Lhost = resolv(argv[++i]);break;
+			case 'l': dllname = argv[++i];break;
+			case 'L': dllpar = argv[++i];break;
+			case 'e': everyone = 1;break;
+			case 'i': inject = atoi(argv[++i]);break;
+			case 'p': priority = 1;break;
+			case 'q': quiet = 1;break;
+			case 'X': multisock = 1;break;
+			case 'Y': samesock = 1;break;
+			case 't': timeout = atoi(argv[++i]);break;
+			case 'M': useMulticast = 1;break;
 			default: {
 				fprintf(stderr, "\nError: wrong command-line argument (%s)\n\n", argv[i]);
 				exit(1);

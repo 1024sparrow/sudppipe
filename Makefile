@@ -19,4 +19,4 @@ replace_plugin.so: replace_plugin.c
 
 
 clean:
-	rm sudppipe replace_plugin.so
+	rm sudppipe sudppipe-win64.exe replace_plugin.so
