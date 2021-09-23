@@ -158,7 +158,7 @@ int
 
 
 int sendtof(int s, char *buf, int len, struct sockaddr_in *to, int do_mysendto);
-int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port);
+int bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port, int isListener);
 struct clients_struct *check_sd(struct sockaddr_in *peer, int force_remove);
 struct sockaddr_in *create_peer_array(u8 *list, u16 default_port);
 void show_peer_array(u8 *str, struct sockaddr_in *peer);
@@ -243,10 +243,10 @@ main(int argc, char *argv[])
 "              example using a wireless connection instead of the main one)\n"
  "-l LIB     load a dll/so file which will be used to process all the incoming\n"
 "              packets. The library must contain the following __cdecl functions:\n"
-"                int sudp_init(char *data);            // if you need initialization\n"
-"                int sudp_pck(char *data, int len);    // each packet goes here\n"
-"                int sudp_vis(char *data, int len);    // for visualization only\n"
-"                int myrecvfrom(...cut...);            // proxocket plugin\n"
+"                int sudp_init(char *data);          // if you need initialization\n"
+"                int sudp_pck(char *data, int len);  // each packet goes here\n"
+"                int sudp_vis(char *data, int len);  // for visualization only\n"
+"                int myrecvfrom(...cut...);          // proxocket plugin\n"
 "                int mysendto(...cut...);            // proxocket plugin\n"
 "-L PAR      parameter for the initialization of the above function,\n"
 "              if the plugin library supports parameters use -L \"\" for help/list\n"
@@ -298,10 +298,15 @@ main(int argc, char *argv[])
 			case 'Y': samesock = 1;break;
 			case 't': timeout = atoi(argv[++i]);break;
 			case 'M': useMulticast = 1;break;
-			default: {
-				fprintf(stderr, "\nError: wrong command-line argument (%s)\n\n", argv[i]);
+			default:
+			{
+				fprintf(
+					stderr,
+					"\nError: wrong command-line argument (%s)\n\n",
+					argv[i]
+				);
 				exit(1);
-				} break;
+			}
 		}
 	}
 
@@ -315,16 +320,16 @@ main(int argc, char *argv[])
 	if(Lhost == INADDR_NONE)
 		std_err();
 
-	sdl = bind_udp_socket(NULL, lhost, lport);
+	sdl = bind_udp_socket(NULL, lhost, lport, 1);
 
 	if(inject)
-		sdi = bind_udp_socket(NULL, lhost, inject);
+		sdi = bind_udp_socket(NULL, lhost, inject, 1);
 
 	if(samesock)
 	{
 		if(!quiet)
 			fprintf(stderr, "- same socket/port mode\n");
-		samesock = bind_udp_socket(NULL, Lhost, 0);
+		samesock = bind_udp_socket(NULL, Lhost, 0, 1);
 	}
 	if(multisock)
 	{
@@ -387,7 +392,7 @@ main(int argc, char *argv[])
 
 	if (!dhost[0].sin_addr.s_addr)
 	{
-		sd0 = bind_udp_socket(&peer0, Lhost, port);
+		sd0 = bind_udp_socket(&peer0, Lhost, port, 0);
 		printf("- wait first packet from the server (double-binding mode)\n");
 		FD_ZERO(&readset); // wait first client's packet, this is NEEDED!
 		FD_SET(sd0, &readset);
@@ -708,7 +713,6 @@ quit_and_free:
 }
 
 
-// подключаем клиента
 struct clients_struct *
 check_sd(struct sockaddr_in *peer, int force_remove)
 {
@@ -793,7 +797,7 @@ multisock_doit:
 	}
 	else
 	{
-		clients    = c;
+		clients = c;
 	}
 
 	if (samesock)
@@ -802,7 +806,7 @@ multisock_doit:
 	}
 	else
 	{
-		c->sd = bind_udp_socket(NULL, Lhost, 0);
+		c->sd = bind_udp_socket(NULL, Lhost, 0, 0);
 	}
 	memcpy(
 		&c->peer,
@@ -912,13 +916,13 @@ show_peer_array(u8 *str, struct sockaddr_in *peer)
 
 
 int
-bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
-{ // boris here
+bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port, int isListener)
+{
 	struct sockaddr_in peer_tmp;
 	int sd;
 	static const int
 		on = 1, // reuse address option
-		tos = 0x10
+		tos = 0x10 // #define IPTOS_LOWDELAY    0x10 (/usr/include/netinet/ip.h)
 	;
 	static const struct linger
 		ling = {1,1}
@@ -948,7 +952,7 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		}
 	}
 
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); // оригинал: IPPROTO_UDP ослабляет требования к контрольной сумме.
+	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd < 0)
 		std_err();
 	setsockopt(
@@ -961,7 +965,7 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 	if (
 		bind(
 			sd,
-			(struct sockaddr *)peer, // в случае с Виндой, INADDR_ANY надо передавать
+			(struct sockaddr *)peer,
 			sizeof(struct sockaddr_in)
 		) < 0
 	)
@@ -976,11 +980,11 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		(char *)&ling,
 		sizeof(ling)
 	);
-	if (useMulticast)
+	if (!isListener && useMulticast)
 	{
 		struct ip_mreq mreq;
 		mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1"); // boris harcode
-		mreq.imr_interface.s_addr = htonl(INADDR_ANY); // boris here: должны при чтении отфильтровывать отправленные нами же сообщения
+		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 		if (
 			setsockopt(
 				sd,
@@ -1003,7 +1007,7 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 			(char *)&on,
 			sizeof(on)
 		);
-		setsockopt( // #define IPTOS_LOWDELAY    0x10 (/usr/include/netinet/ip.h)
+		setsockopt(
 			sd,
 			IPPROTO_IP,
 			IP_TOS,
