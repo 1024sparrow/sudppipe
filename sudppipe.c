@@ -926,7 +926,7 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 
 	if (!peer)
 		peer = &peer_tmp;
-	peer->sin_addr.s_addr = iface; // boris: htonl(INADDR_ANY) on Windows (for multicast only!!)
+	peer->sin_addr.s_addr = iface;
 #ifdef WIN32
 	if (useMulticast)
 	{
@@ -951,8 +951,6 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); // оригинал: IPPROTO_UDP ослабляет требования к контрольной сумме.
 	if (sd < 0)
 		std_err();
-	//const int optval = 1; // boris habr
-	//setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 	setsockopt(
 		sd,
 		SOL_SOCKET,
@@ -960,16 +958,6 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		(char *)&on,
 		sizeof(on)
 	);
-	// sockfd = socket(AF_INET, SOCK_DGRAM, 0); // boris habr
-	/* boris habr: Windows
-		struct sockaddr_in addr;
-		bzero(&addr, sizeof(addr));
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(port);
-		addr.sin_addr.s_addr = htonl(INADDR_ANY); // в Linux - наш целевой IP
-
-		bind(sockfd, (sockaddr *)&addr, sizeof(addr));
-	*/
 	if (
 		bind(
 			sd,
@@ -980,8 +968,6 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 	{
 		std_err();
 	}
-	printf("--%i--\n", useMulticast);
-	puts("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
 	setsockopt(
 		sd,
@@ -992,33 +978,9 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 	);
 	if (useMulticast)
 	{
-		/*
-			struct ip_mreq mreq;
-			inet_aton(ip_addr, &(mreq.imr_multiaddr));
-			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-				
-			setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-		*/
-		/*
 		struct ip_mreq mreq;
-		//inet_aton(ip_addr, &(mreq.imr_multiaddr));
-#ifdef WIN32
-		inet_pton("239.0.0.1", &(mreq.imr_multiaddr));
-#else
-		inet_aton("239.0.0.1", &(mreq.imr_multiaddr));
-#endif
-		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-		setsockopt( // boris here
-			sd,
-			IPPROTO_IP,
-			IP_ADD_MEMBERSHIP,
-			&mreq,
-			sizeof(mreq)
-		);*/
-
-		struct ip_mreq mreq;
-		mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1");
-		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+		mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1"); // boris harcode
+		mreq.imr_interface.s_addr = htonl(INADDR_ANY); // boris here: должны при чтении отфильтровывать отправленные нами же сообщения
 		if (
 			setsockopt(
 				sd,
