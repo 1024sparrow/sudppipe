@@ -232,42 +232,42 @@ main(int argc, char *argv[])
 	{
 		printf(
 			"\n"
-				"Usage: %s [options] <server*> <server_port> <local_port>\n"
-				"\n"
-				"Options:\n"
-				"-x          show the hex dump of each packet\n"
-				"-a FILE     create a CAP (tcpdump) file in which storing all the packets\n"
-				"-b IP       bind only the input interface identified with IP\n"
-				"-B IP       as above but works only for the outgoing socket, this means you can\n"
-				"              decide to use a secondary interface for connecting to the host (for\n"
-				"              example using a wireless connection instead of the main one)\n"
-				 "-l LIB     load a dll/so file which will be used to process all the incoming\n"
-				"              packets. The library must contain the following __cdecl functions:\n"
-				"                int sudp_init(char *data);            // if you need initialization\n"
-				"                int sudp_pck(char *data, int len);    // each packet goes here\n"
-				"                int sudp_vis(char *data, int len);    // for visualization only\n"
-				"                int myrecvfrom(...cut...);            // proxocket plugin\n"
-				"                int mysendto(...cut...);            // proxocket plugin\n"
-				"-L PAR      parameter for the initialization of the above function,\n"
-				"              if the plugin library supports parameters use -L \"\" for help/list\n"
-				"-e          forward each packet to anyone (clients and server) except the sender,\n"
-				"              it works just like a chat or a broadcaster\n"
-				"-i PORT     injection option, listen on the port PORT and each packet received\n"
-				"              here is sent to the server from all the connected clients\n"
-				"-X          in case of multiple hosts assigns a new socket to each client, this\n"
-				"              is useful if the hosts are the same for using multiple source ports\n"
-				"-Y          just the opposite of the above one, ANY client has the same port\n"
-				"-t SECS     seconds of inactivity after which closing the client socket (%d)\n"
-				"-p          increase process priority\n"
-				"-M          interprete each server's IP as IP of multicast group\n"
-				"-q          quiet output\n"
-				"\n"
-				"* <server> can be also a sequence of hostnames and IP addresses separated by\n"
-				"  comma to which will be sent and received all the packets at the same time.\n"
-				"  <server> can also contain the port using the syntax IP:PORT, such port will\n"
-				"  override the default one set by <server_port>.\n"
-				"  if <server> is 0 the tool will consider <server_port> as a local port and\n"
-				"  will act just like a double binding mode (experimental!)\n"
+"Usage: %s [options] <server*> <server_port> <local_port>\n"
+"\n"
+"Options:\n"
+"-x          show the hex dump of each packet\n"
+"-a FILE     create a CAP (tcpdump) file in which storing all the packets\n"
+"-b IP       bind only the input interface identified with IP\n"
+"-B IP       as above but works only for the outgoing socket, this means you can\n"
+"              decide to use a secondary interface for connecting to the host (for\n"
+"              example using a wireless connection instead of the main one)\n"
+ "-l LIB     load a dll/so file which will be used to process all the incoming\n"
+"              packets. The library must contain the following __cdecl functions:\n"
+"                int sudp_init(char *data);            // if you need initialization\n"
+"                int sudp_pck(char *data, int len);    // each packet goes here\n"
+"                int sudp_vis(char *data, int len);    // for visualization only\n"
+"                int myrecvfrom(...cut...);            // proxocket plugin\n"
+"                int mysendto(...cut...);            // proxocket plugin\n"
+"-L PAR      parameter for the initialization of the above function,\n"
+"              if the plugin library supports parameters use -L \"\" for help/list\n"
+"-e          forward each packet to anyone (clients and server) except the sender,\n"
+"              it works just like a chat or a broadcaster\n"
+"-i PORT     injection option, listen on the port PORT and each packet received\n"
+"              here is sent to the server from all the connected clients\n"
+"-X          in case of multiple hosts assigns a new socket to each client, this\n"
+"              is useful if the hosts are the same for using multiple source ports\n"
+"-Y          just the opposite of the above one, ANY client has the same port\n"
+"-t SECS     seconds of inactivity after which closing the client socket (%d)\n"
+"-p          increase process priority\n"
+"-M          interprete each server's IP as IP of multicast group\n"
+"-q          quiet output\n"
+"\n"
+"* <server> can be also a sequence of hostnames and IP addresses separated by\n"
+"  comma to which will be sent and received all the packets at the same time.\n"
+"  <server> can also contain the port using the syntax IP:PORT, such port will\n"
+"  override the default one set by <server_port>.\n"
+"  if <server> is 0 the tool will consider <server_port> as a local port and\n"
+"  will act just like a double binding mode (experimental!)\n"
 				"\n",
 			argv[0],
 			timeout
@@ -928,10 +928,10 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		peer = &peer_tmp;
 	peer->sin_addr.s_addr = iface; // boris: htonl(INADDR_ANY) on Windows (for multicast only!!)
 #ifdef WIN32
-    if (useMulticast)
-    {
-        peer->sin_addr.s_addr = htonl(INADDR_ANY);
-    }
+	if (useMulticast)
+	{
+		peer->sin_addr.s_addr = htonl(INADDR_ANY);
+	}
 #endif
 	peer->sin_port = htons(port);
 	peer->sin_family = AF_INET;
@@ -990,36 +990,65 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		(char *)&ling,
 		sizeof(ling)
 	);
-    if (useMulticast)
-    {
-        /*
-            struct ip_mreq mreq;
-            inet_aton(ip_addr, &(mreq.imr_multiaddr));
-            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-                
-            setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-        */
-        setsockopt( // boris here
-sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
-        };
-    }
-    else
-    {
-        setsockopt(
-            sd,
-            SOL_SOCKET,
-            SO_BROADCAST,
-            (char *)&on,
-            sizeof(on)
-        );
-        setsockopt(
-            sd,
-            IPPROTO_IP,
-            IP_TOS,
-            (char *)&tos,
-            sizeof(tos)
-        );
-    }
+	if (useMulticast)
+	{
+		/*
+			struct ip_mreq mreq;
+			inet_aton(ip_addr, &(mreq.imr_multiaddr));
+			mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+				
+			setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+		*/
+		/*
+		struct ip_mreq mreq;
+		//inet_aton(ip_addr, &(mreq.imr_multiaddr));
+#ifdef WIN32
+		inet_pton("239.0.0.1", &(mreq.imr_multiaddr));
+#else
+		inet_aton("239.0.0.1", &(mreq.imr_multiaddr));
+#endif
+		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+		setsockopt( // boris here
+			sd,
+			IPPROTO_IP,
+			IP_ADD_MEMBERSHIP,
+			&mreq,
+			sizeof(mreq)
+		);*/
+
+		struct ip_mreq mreq;
+		mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1");
+		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+		if (
+			setsockopt(
+				sd,
+				IPPROTO_IP,
+				IP_ADD_MEMBERSHIP,
+				(char*) &mreq,
+				sizeof(mreq)
+			) < 0
+		){
+			perror("setsockopt");
+			return 1;
+		}
+	}
+	else
+	{
+		setsockopt(
+			sd,
+			SOL_SOCKET,
+			SO_BROADCAST,
+			(char *)&on,
+			sizeof(on)
+		);
+		setsockopt( // #define IPTOS_LOWDELAY    0x10 (/usr/include/netinet/ip.h)
+			sd,
+			IPPROTO_IP,
+			IP_TOS,
+			(char *)&tos,
+			sizeof(tos)
+		);
+	}
 	return sd;
 }
 
