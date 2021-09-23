@@ -1000,6 +1000,7 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
             setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
         */
         setsockopt( // boris here
+sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
         };
     }
     else
