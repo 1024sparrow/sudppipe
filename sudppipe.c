@@ -926,7 +926,13 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 
 	if (!peer)
 		peer = &peer_tmp;
-	peer->sin_addr.s_addr = iface;
+	peer->sin_addr.s_addr = iface; // boris: htonl(INADDR_ANY) on Windows (for multicast only!!)
+#ifdef WIN32
+    if (useMulticast)
+    {
+        peer->sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+#endif
 	peer->sin_port = htons(port);
 	peer->sin_family = AF_INET;
 
@@ -984,21 +990,36 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port)
 		(char *)&ling,
 		sizeof(ling)
 	);
-	setsockopt(
-		sd,
-		SOL_SOCKET,
-		SO_BROADCAST,
-		(char *)&on,
-		sizeof(on)
-	);
-	setsockopt(
-		sd,
-		IPPROTO_IP,
-		IP_TOS,
-		(char *)&tos,
-		sizeof(tos)
-	);
-	return(sd);
+    if (useMulticast)
+    {
+        /*
+            struct ip_mreq mreq;
+            inet_aton(ip_addr, &(mreq.imr_multiaddr));
+            mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+                
+            setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+        */
+        setsockopt( // boris here
+        };
+    }
+    else
+    {
+        setsockopt(
+            sd,
+            SOL_SOCKET,
+            SO_BROADCAST,
+            (char *)&on,
+            sizeof(on)
+        );
+        setsockopt(
+            sd,
+            IPPROTO_IP,
+            IP_TOS,
+            (char *)&tos,
+            sizeof(tos)
+        );
+    }
+	return sd;
 }
 
 
