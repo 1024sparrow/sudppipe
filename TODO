@@ -1,4 +1,4 @@
 TODO list:
 =============
-- checking for source ports uniqueness. Exit with error immetiatelly if duplicates detected.
+- сделать возможным передачу сразу списка портов. checking for source ports uniqueness. Exit with error immetiatelly if duplicates detected.
 - обработка случая, когда кто-то не слушает

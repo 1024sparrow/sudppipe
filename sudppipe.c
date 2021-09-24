@@ -983,7 +983,9 @@ bind_udp_socket(struct sockaddr_in *peer, in_addr_t iface, u16 port, int isListe
 	if (!isListener && useMulticast)
 	{
 		struct ip_mreq mreq;
-		mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1"); // boris harcode
+		//mreq.imr_multiaddr.s_addr = inet_addr("239.0.0.1"); // boris harcode
+		//mreq.imr_multiaddr.s_addr = inet_addr(peer); // boris harcode
+        mreq.imr_multiaddr.s_addr = peer->sin_addr.s_addr;
 		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 		if (
 			setsockopt(
